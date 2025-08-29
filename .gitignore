@@ -1,0 +1,38 @@
+# Rust
+/target/
+**/*.rs.bk
+
+# Logs
+logs/
+*.log
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+.local*
+justfile
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+*.pem
+*.crt
+*.key
+
+# Editors
+.vscode/
+.idea/
+*.iml
+
+# Notes
+notes*.txt
+notes*.md
+notes*.json
+tree*.txt
+diff*.txt
+prompt*.txt
+

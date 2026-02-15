@@ -1,0 +1,14 @@
+[package]
+name = "radroots_field_wasm"
+version.workspace = true
+edition.workspace = true
+authors = ["triesap npub1tr33s4tj2le2kk9yzhfphdtss26gyn8kv7savnnjhj794nqp333q8e7grr"]
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+radroots_field_core = { workspace = true, default-features = false }
+wasm-bindgen = { workspace = true }

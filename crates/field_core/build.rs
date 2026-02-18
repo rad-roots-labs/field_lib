@@ -6,10 +6,10 @@ use std::{
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
-    println!("cargo:rerun-if-env-changed=SOURCE_DATE_EPOCH");
+    println!("cargo:rerun-if-env-changed=RUSTC");
     println!("cargo:rerun-if-env-changed=PROFILE");
 
-    let rustc = env::var("RUSTC").unwrap_or_else(|_| "rustc".into());
+    let rustc = env::var("RUSTC").expect("missing required env var RUSTC");
     if let Ok(out) = Command::new(rustc).arg("--version").output() {
         if out.status.success() {
             if let Ok(ver) = String::from_utf8(out.stdout) {
@@ -36,18 +36,12 @@ fn main() {
         }
     }
 
-    if let Ok(profile) = env::var("PROFILE") {
-        println!("cargo:rustc-env=PROFILE={profile}");
-    }
+    let profile = env::var("PROFILE").expect("missing required env var PROFILE");
+    println!("cargo:rustc-env=PROFILE={profile}");
 
-    let epoch = env::var("SOURCE_DATE_EPOCH")
-        .ok()
-        .and_then(|v| v.parse::<u64>().ok())
-        .unwrap_or_else(|| {
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .map(|d| d.as_secs())
-                .unwrap_or(0)
-        });
+    let epoch = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .expect("system time before unix epoch");
     println!("cargo:rustc-env=BUILD_TIME_UNIX={epoch}");
 }

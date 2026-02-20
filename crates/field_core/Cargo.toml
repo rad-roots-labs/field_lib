@@ -17,6 +17,7 @@ nostr-client = [
     "dep:radroots-core",
     "dep:radroots-events-codec",
     "dep:radroots-trade",
+    "dep:radroots-identity",
     "dep:radroots-nostr",
 ]
 directories = ["radroots-net-core/directories"]
@@ -27,6 +28,7 @@ radroots-log = { workspace = true }
 radroots-events = { workspace = true }
 radroots-net-core = { workspace = true, features = ["std"] }
 radroots-core = { workspace = true, optional = true }
+radroots-identity = { workspace = true, optional = true, default-features = false, features = ["std"] }
 radroots-events-codec = { workspace = true, features = ["serde_json"], optional = true }
 radroots-trade = { workspace = true, features = ["std", "serde", "serde_json"], optional = true }
 radroots-nostr = { workspace = true, features = ["events"], optional = true }

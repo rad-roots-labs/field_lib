@@ -1,14 +1,20 @@
 use super::RadrootsRuntime;
 use crate::RadrootsAppError;
+use radroots_identity::{RadrootsIdentity, RadrootsIdentityId};
 use std::path::PathBuf;
 
 #[uniffi::export]
 impl RadrootsRuntime {
-    pub fn keys_is_loaded(&self) -> bool {
+    pub fn accounts_has_selected_signing_identity(&self) -> bool {
         if let Ok(guard) = self.net.lock() {
             #[cfg(feature = "nostr-client")]
             {
-                return guard.keys.state.loaded;
+                return guard
+                    .accounts
+                    .selected_signing_identity()
+                    .ok()
+                    .flatten()
+                    .is_some();
             }
             #[cfg(not(feature = "nostr-client"))]
             {
@@ -18,25 +24,36 @@ impl RadrootsRuntime {
         false
     }
 
-    pub fn keys_npub(&self) -> Option<String> {
+    pub fn accounts_selected_npub(&self) -> Option<String> {
         if let Ok(guard) = self.net.lock() {
             #[cfg(feature = "nostr-client")]
             {
-                return guard.keys.npub();
+                return guard
+                    .accounts
+                    .selected_public_identity()
+                    .ok()
+                    .flatten()
+                    .map(|identity| identity.public_key_npub);
             }
         }
         None
     }
 
-    pub fn keys_generate_in_memory(&self) -> Result<String, RadrootsAppError> {
-        let mut guard = self
+    pub fn accounts_list_ids(&self) -> Result<Vec<String>, RadrootsAppError> {
+        let guard = self
             .net
             .lock()
             .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
         #[cfg(feature = "nostr-client")]
         {
-            let k = guard.keys.generate_in_memory();
-            return Ok(k.public_key().to_string());
+            let accounts = guard
+                .accounts
+                .list_accounts()
+                .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
+            return Ok(accounts
+                .into_iter()
+                .map(|account| account.account_id.to_string())
+                .collect());
         }
         #[cfg(not(feature = "nostr-client"))]
         {
@@ -44,16 +61,99 @@ impl RadrootsRuntime {
         }
     }
 
-    pub fn keys_export_secret_hex(&self) -> Result<String, RadrootsAppError> {
+    pub fn accounts_generate(
+        &self,
+        label: Option<String>,
+        make_selected: bool,
+    ) -> Result<String, RadrootsAppError> {
+        let mut guard = self
+            .net
+            .lock()
+            .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
+        #[cfg(feature = "nostr-client")]
+        {
+            let account_id = guard
+                .accounts
+                .generate_identity(label, make_selected)
+                .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
+            guard.nostr = None;
+            return Ok(account_id.to_string());
+        }
+        #[cfg(not(feature = "nostr-client"))]
+        {
+            Err(RadrootsAppError::Msg("nostr disabled".into()))
+        }
+    }
+
+    pub fn accounts_import_secret(
+        &self,
+        secret_key: String,
+        label: Option<String>,
+        make_selected: bool,
+    ) -> Result<String, RadrootsAppError> {
+        let mut guard = self
+            .net
+            .lock()
+            .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
+        #[cfg(feature = "nostr-client")]
+        {
+            let identity = RadrootsIdentity::from_secret_key_str(secret_key.as_str())
+                .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
+            let account_id = guard
+                .accounts
+                .upsert_identity(&identity, label, make_selected)
+                .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
+            guard.nostr = None;
+            return Ok(account_id.to_string());
+        }
+        #[cfg(not(feature = "nostr-client"))]
+        {
+            Err(RadrootsAppError::Msg("nostr disabled".into()))
+        }
+    }
+
+    pub fn accounts_import_from_path(
+        &self,
+        path: String,
+        label: Option<String>,
+        make_selected: bool,
+    ) -> Result<String, RadrootsAppError> {
+        let mut guard = self
+            .net
+            .lock()
+            .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
+        #[cfg(feature = "nostr-client")]
+        {
+            let account_id = guard
+                .accounts
+                .migrate_legacy_identity_file(PathBuf::from(path), label, make_selected)
+                .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
+            guard.nostr = None;
+            return Ok(account_id.to_string());
+        }
+        #[cfg(not(feature = "nostr-client"))]
+        {
+            Err(RadrootsAppError::Msg("nostr disabled".into()))
+        }
+    }
+
+    pub fn accounts_export_selected_secret_hex(&self) -> Result<Option<String>, RadrootsAppError> {
         let guard = self
             .net
             .lock()
             .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
         #[cfg(feature = "nostr-client")]
         {
+            let Some(selected_id) = guard
+                .accounts
+                .selected_account_id()
+                .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?
+            else {
+                return Ok(None);
+            };
             return guard
-                .keys
-                .export_secret_hex()
+                .accounts
+                .export_secret_hex(&selected_id)
                 .map_err(|e| RadrootsAppError::Msg(format!("{e}")));
         }
         #[cfg(not(feature = "nostr-client"))]
@@ -62,17 +162,20 @@ impl RadrootsRuntime {
         }
     }
 
-    pub fn keys_load_hex32(&self, hex: String) -> Result<(), RadrootsAppError> {
+    pub fn accounts_select(&self, account_id: String) -> Result<(), RadrootsAppError> {
         let mut guard = self
             .net
             .lock()
             .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
         #[cfg(feature = "nostr-client")]
         {
-            guard
-                .keys
-                .load_from_hex32(&hex)
+            let account_id = RadrootsIdentityId::parse(account_id.as_str())
                 .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
+            guard
+                .accounts
+                .select_account(&account_id)
+                .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
+            guard.nostr = None;
             Ok(())
         }
         #[cfg(not(feature = "nostr-client"))]
@@ -81,49 +184,25 @@ impl RadrootsRuntime {
         }
     }
 
-    pub fn keys_load_from_path_auto(&self, path: String) -> Result<(), RadrootsAppError> {
+    pub fn accounts_remove(&self, account_id: String) -> Result<(), RadrootsAppError> {
         let mut guard = self
             .net
             .lock()
             .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
         #[cfg(feature = "nostr-client")]
         {
-            guard
-                .keys
-                .load_from_path_auto(PathBuf::from(path))
+            let account_id = RadrootsIdentityId::parse(account_id.as_str())
                 .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
+            guard
+                .accounts
+                .remove_account(&account_id)
+                .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
+            guard.nostr = None;
             Ok(())
         }
         #[cfg(not(feature = "nostr-client"))]
         {
             Err(RadrootsAppError::Msg("nostr disabled".into()))
-        }
-    }
-
-    pub fn keys_persist_best_practice(&self) -> Result<String, RadrootsAppError> {
-        let _guard = self
-            .net
-            .lock()
-            .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
-        #[cfg(all(
-            feature = "nostr-client",
-            feature = "directories",
-            feature = "fs-persistence"
-        ))]
-        {
-            let p = _guard
-                .keys
-                .persist_best_practice()
-                .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
-            Ok(p.display().to_string())
-        }
-        #[cfg(not(all(
-            feature = "nostr-client",
-            feature = "directories",
-            feature = "fs-persistence"
-        )))]
-        {
-            Err(RadrootsAppError::Msg("persistence unsupported".into()))
         }
     }
 }

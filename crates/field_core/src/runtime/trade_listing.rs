@@ -608,9 +608,8 @@ fn current_pubkey_hex(runtime: &RadrootsRuntime) -> Result<String, RadrootsAppEr
         .lock()
         .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
     let keys = guard
-        .keys
-        .require()
-        .map_err(|e| RadrootsAppError::Msg(e.to_string()))?;
+        .selected_nostr_keys()
+        .ok_or_else(|| RadrootsAppError::Msg("no selected signing identity".into()))?;
     Ok(keys.public_key().to_hex())
 }
 

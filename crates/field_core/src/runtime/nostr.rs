@@ -144,7 +144,7 @@ impl RadrootsRuntime {
         let guard = self.net.lock().ok()?;
         #[cfg(feature = "nostr-client")]
         {
-            let keys = guard.keys.require().ok()?;
+            let keys = guard.selected_nostr_keys()?;
             let pk = keys.public_key();
             let mgr = guard.nostr.as_ref()?;
             let out = mgr.fetch_profile_event_blocking(pk).ok()?;

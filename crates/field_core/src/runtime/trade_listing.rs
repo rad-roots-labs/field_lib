@@ -25,7 +25,7 @@ use radroots_trade::listing::{
         TradeListingEnvelope, TradeListingMessagePayload, TradeListingMessageType,
         TradeListingValidateRequest,
     },
-    dvm_kinds::TRADE_LISTING_DVM_KINDS,
+    kinds::TRADE_LISTING_KINDS,
     order::{TradeOrder, TradeOrderItem, TradeOrderStatus},
     tags::trade_listing_dvm_tags,
     validation::{RadrootsTradeListing, validate_listing_event},
@@ -295,7 +295,7 @@ impl RadrootsRuntime {
                 .as_ref()
                 .ok_or_else(|| RadrootsAppError::Msg("nostr not initialized".into()))?;
 
-            let kinds: Vec<RadrootsNostrKind> = TRADE_LISTING_DVM_KINDS
+            let kinds: Vec<RadrootsNostrKind> = TRADE_LISTING_KINDS
                 .iter()
                 .map(|k| RadrootsNostrKind::Custom(*k))
                 .collect();

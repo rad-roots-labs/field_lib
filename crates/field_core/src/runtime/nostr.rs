@@ -76,32 +76,33 @@ fn map_post_event_metadata(
     }
 }
 
-#[uniffi::export]
+#[cfg_attr(not(coverage_nightly), uniffi::export)]
 impl RadrootsRuntime {
     pub fn nostr_set_default_relays(&self, relays: Vec<String>) -> Result<(), RadrootsAppError> {
-        let mut guard = self
-            .net
-            .lock()
-            .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
         #[cfg(feature = "nostr-client")]
         {
+            let mut guard = match self.net.lock() {
+                Ok(guard) => guard,
+                Err(err) => return Err(RadrootsAppError::Msg(format!("{err}"))),
+            };
             guard
                 .nostr_set_default_relays(&relays)
                 .map_err(|e| RadrootsAppError::Msg(format!("{e}")))
         }
         #[cfg(not(feature = "nostr-client"))]
         {
+            let _ = relays;
             Err(RadrootsAppError::Msg("nostr disabled".into()))
         }
     }
 
     pub fn nostr_connect_if_key_present(&self) -> Result<(), RadrootsAppError> {
-        let mut guard = self
-            .net
-            .lock()
-            .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
         #[cfg(feature = "nostr-client")]
         {
+            let mut guard = match self.net.lock() {
+                Ok(guard) => guard,
+                Err(err) => return Err(RadrootsAppError::Msg(format!("{err}"))),
+            };
             guard
                 .nostr_connect_if_key_present()
                 .map_err(|e| RadrootsAppError::Msg(format!("{e}")))
@@ -113,10 +114,10 @@ impl RadrootsRuntime {
     }
 
     pub fn nostr_connection_status(&self) -> NostrConnectionStatus {
-        let guard = self.net.lock();
-        if let Ok(g) = guard {
-            #[cfg(feature = "nostr-client")]
-            {
+        #[cfg(feature = "nostr-client")]
+        {
+            let guard = self.net.lock();
+            if let Ok(g) = guard {
                 if let Some(s) = g.nostr_connection_snapshot() {
                     let light = match s.light {
                         radroots_net_core::nostr_client::Light::Green => NostrLight::Green,
@@ -131,19 +132,29 @@ impl RadrootsRuntime {
                     };
                 }
             }
+            NostrConnectionStatus {
+                light: NostrLight::Red,
+                connected: 0,
+                connecting: 0,
+                last_error: None,
+            }
         }
-        NostrConnectionStatus {
-            light: NostrLight::Red,
-            connected: 0,
-            connecting: 0,
-            last_error: None,
+
+        #[cfg(not(feature = "nostr-client"))]
+        {
+            NostrConnectionStatus {
+                light: NostrLight::Red,
+                connected: 0,
+                connecting: 0,
+                last_error: None,
+            }
         }
     }
 
     pub fn nostr_profile_for_self(&self) -> Option<NostrProfileEventMetadata> {
-        let guard = self.net.lock().ok()?;
         #[cfg(feature = "nostr-client")]
         {
+            let guard = self.net.lock().ok()?;
             let keys = guard.selected_nostr_keys()?;
             let pk = keys.public_key();
             let mgr = guard.nostr.as_ref()?;
@@ -179,12 +190,12 @@ impl RadrootsRuntime {
         nip05: Option<String>,
         about: Option<String>,
     ) -> Result<String, RadrootsAppError> {
-        let guard = self
-            .net
-            .lock()
-            .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
         #[cfg(feature = "nostr-client")]
         {
+            let guard = match self.net.lock() {
+                Ok(guard) => guard,
+                Err(err) => return Err(RadrootsAppError::Msg(format!("{err}"))),
+            };
             let mgr = guard
                 .nostr
                 .as_ref()
@@ -194,17 +205,18 @@ impl RadrootsRuntime {
         }
         #[cfg(not(feature = "nostr-client"))]
         {
+            let _ = (name, display_name, nip05, about);
             Err(RadrootsAppError::Msg("nostr disabled".into()))
         }
     }
 
     pub fn nostr_post_text_note(&self, content: String) -> Result<String, RadrootsAppError> {
-        let guard = self
-            .net
-            .lock()
-            .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
         #[cfg(feature = "nostr-client")]
         {
+            let guard = match self.net.lock() {
+                Ok(guard) => guard,
+                Err(err) => return Err(RadrootsAppError::Msg(format!("{err}"))),
+            };
             let mgr = guard
                 .nostr
                 .as_ref()
@@ -214,6 +226,7 @@ impl RadrootsRuntime {
         }
         #[cfg(not(feature = "nostr-client"))]
         {
+            let _ = content;
             Err(RadrootsAppError::Msg("nostr disabled".into()))
         }
     }
@@ -223,12 +236,12 @@ impl RadrootsRuntime {
         limit: u16,
         since_unix: Option<u64>,
     ) -> Result<Vec<NostrPostEventMetadata>, RadrootsAppError> {
-        let guard = self
-            .net
-            .lock()
-            .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
         #[cfg(feature = "nostr-client")]
         {
+            let guard = match self.net.lock() {
+                Ok(guard) => guard,
+                Err(err) => return Err(RadrootsAppError::Msg(format!("{err}"))),
+            };
             let mgr = guard
                 .nostr
                 .as_ref()
@@ -240,6 +253,7 @@ impl RadrootsRuntime {
         }
         #[cfg(not(feature = "nostr-client"))]
         {
+            let _ = (limit, since_unix);
             Err(RadrootsAppError::Msg("nostr disabled".into()))
         }
     }
@@ -251,12 +265,12 @@ impl RadrootsRuntime {
         content: String,
         root_event_id_hex: Option<String>,
     ) -> Result<String, RadrootsAppError> {
-        let guard = self
-            .net
-            .lock()
-            .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
         #[cfg(feature = "nostr-client")]
         {
+            let guard = match self.net.lock() {
+                Ok(guard) => guard,
+                Err(err) => return Err(RadrootsAppError::Msg(format!("{err}"))),
+            };
             let mgr = guard
                 .nostr
                 .as_ref()
@@ -271,6 +285,12 @@ impl RadrootsRuntime {
         }
         #[cfg(not(feature = "nostr-client"))]
         {
+            let _ = (
+                parent_event_id_hex,
+                parent_author_hex,
+                content,
+                root_event_id_hex,
+            );
             Err(RadrootsAppError::Msg("nostr disabled".into()))
         }
     }
@@ -279,12 +299,12 @@ impl RadrootsRuntime {
         &self,
         since_unix: Option<u64>,
     ) -> Result<(), RadrootsAppError> {
-        let guard = self
-            .net
-            .lock()
-            .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
         #[cfg(feature = "nostr-client")]
         {
+            let guard = match self.net.lock() {
+                Ok(guard) => guard,
+                Err(err) => return Err(RadrootsAppError::Msg(format!("{err}"))),
+            };
             let mgr = guard
                 .nostr
                 .as_ref()
@@ -299,6 +319,7 @@ impl RadrootsRuntime {
         }
         #[cfg(not(feature = "nostr-client"))]
         {
+            let _ = since_unix;
             Err(RadrootsAppError::Msg("nostr disabled".into()))
         }
     }
@@ -325,12 +346,12 @@ impl RadrootsRuntime {
     }
 
     pub fn nostr_stop_post_event_stream(&self) -> Result<(), RadrootsAppError> {
-        let guard = self
-            .net
-            .lock()
-            .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
         #[cfg(feature = "nostr-client")]
         {
+            let guard = match self.net.lock() {
+                Ok(guard) => guard,
+                Err(err) => return Err(RadrootsAppError::Msg(format!("{err}"))),
+            };
             let mgr = guard
                 .nostr
                 .as_ref()

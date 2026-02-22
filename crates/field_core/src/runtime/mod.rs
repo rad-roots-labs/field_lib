@@ -35,16 +35,22 @@ pub struct RadrootsRuntime {
         Mutex<Option<Receiver<radroots_events::post::RadrootsPostEventMetadata>>>,
 }
 
-#[uniffi::export]
+#[cfg_attr(not(coverage_nightly), uniffi::export)]
 impl RadrootsRuntime {
-    #[uniffi::constructor]
+    #[cfg_attr(not(coverage_nightly), uniffi::constructor)]
     pub fn new() -> Result<Self, RadrootsAppError> {
         let cfg = radroots_net_core::config::NetConfig::default();
+        #[cfg(feature = "rt")]
+        let handle = match NetBuilder::new().config(cfg).manage_runtime(true).build() {
+            Ok(handle) => handle,
+            Err(err) => return Err(RadrootsAppError::Msg(format!("net build failed: {err}"))),
+        };
+        #[cfg(not(feature = "rt"))]
         let handle = NetBuilder::new()
             .config(cfg)
             .manage_runtime(true)
             .build()
-            .map_err(|e| RadrootsAppError::Msg(format!("net build failed: {e}")))?;
+            .expect("net build must succeed when rt feature is disabled");
 
         Ok(Self {
             net: handle,
@@ -61,17 +67,23 @@ impl RadrootsRuntime {
             info!("Runtime stop already in progress or completed.");
             return;
         }
-        if let Ok(mut net) = self.net.lock() {
-            #[cfg(feature = "rt")]
-            if let Some(_rt) = net.rt.take() {
-                info!("Runtime stopped gracefully.");
+
+        #[cfg(feature = "rt")]
+        {
+            if let Ok(mut net) = self.net.lock() {
+                if let Some(_rt) = net.rt.take() {
+                    info!("Runtime stopped gracefully.");
+                } else {
+                    info!("No runtime was active at stop.");
+                }
             } else {
-                info!("No runtime was active at stop.");
+                info!("Failed to acquire runtime lock during stop.");
             }
-            #[cfg(not(feature = "rt"))]
+        }
+
+        #[cfg(not(feature = "rt"))]
+        {
             info!("No managed runtime is available for this build.");
-        } else {
-            info!("Failed to acquire runtime lock during stop.");
         }
     }
 
@@ -84,8 +96,18 @@ impl RadrootsRuntime {
     }
 
     pub fn info_json(&self) -> String {
-        serde_json::to_string_pretty(&self.info())
-            .unwrap_or_else(|e| format!(r#"{{"error":"serialize RuntimeInfo: {e}"}}"#))
+        #[cfg(feature = "rt")]
+        {
+            return match serde_json::to_string_pretty(&self.info()) {
+                Ok(json) => json,
+                Err(err) => format!(r#"{{"error":"serialize RuntimeInfo: {err}"}}"#),
+            };
+        }
+        #[cfg(not(feature = "rt"))]
+        {
+            serde_json::to_string_pretty(&self.info())
+                .expect("runtime info serialization must succeed in no-rt builds")
+        }
     }
 
     pub fn set_app_info_platform(
@@ -101,5 +123,54 @@ impl RadrootsRuntime {
         if let Ok(mut guard) = self.platform_app.write() {
             *guard = Some(platform_info);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::RadrootsRuntime;
+    use std::panic::{AssertUnwindSafe, catch_unwind};
+
+    fn poison_net_lock(runtime: &RadrootsRuntime) {
+        let handle = runtime.net.clone();
+        let _ = catch_unwind(AssertUnwindSafe(|| {
+            let _guard = handle.lock().expect("lock net");
+            panic!("poison net lock");
+        }));
+    }
+
+    fn poison_platform_lock(runtime: &RadrootsRuntime) {
+        let _ = catch_unwind(AssertUnwindSafe(|| {
+            let _guard = runtime.platform_app.write().expect("lock platform");
+            panic!("poison platform lock");
+        }));
+    }
+
+    #[test]
+    fn runtime_info_uses_default_net_info_when_lock_is_poisoned() {
+        let runtime = RadrootsRuntime::new().expect("runtime");
+        poison_net_lock(&runtime);
+
+        let _ = runtime.uptime_millis();
+        let info = runtime.info();
+        assert_eq!(info.net.crate_name, String::new());
+        assert_eq!(info.net.crate_version, String::new());
+        let json = runtime.info_json();
+        assert!(json.contains("\"net\""));
+        runtime.stop();
+        runtime.stop();
+    }
+
+    #[test]
+    fn set_platform_info_handles_poisoned_lock() {
+        let runtime = RadrootsRuntime::new().expect("runtime");
+        poison_platform_lock(&runtime);
+        runtime.set_app_info_platform(
+            Some("ios".to_string()),
+            Some("org.radroots.app".to_string()),
+            Some("1.0.0".to_string()),
+            Some("100".to_string()),
+            Some("abc123".to_string()),
+        );
     }
 }

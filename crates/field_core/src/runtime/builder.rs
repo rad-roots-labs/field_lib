@@ -9,18 +9,12 @@ pub struct RuntimeBuilder {
     manage_runtime: bool,
 }
 
-impl Default for RuntimeBuilder {
-    fn default() -> Self {
+impl RuntimeBuilder {
+    pub fn new() -> Self {
         Self {
             config: NetConfig::default(),
             manage_runtime: true,
         }
-    }
-}
-
-impl RuntimeBuilder {
-    pub fn new() -> Self {
-        Self::default()
     }
 
     pub fn with_config(mut self, config: NetConfig) -> Self {
@@ -34,10 +28,26 @@ impl RuntimeBuilder {
     }
 
     pub fn build(self) -> Result<NetHandle, RadrootsAppError> {
-        NetBuilder::new()
-            .config(self.config)
-            .manage_runtime(self.manage_runtime)
-            .build()
-            .map_err(|e| RadrootsAppError::Msg(format!("net build failed: {e}")))
+        #[cfg(feature = "rt")]
+        {
+            match NetBuilder::new()
+                .config(self.config)
+                .manage_runtime(self.manage_runtime)
+                .build()
+            {
+                Ok(handle) => Ok(handle),
+                Err(err) => Err(RadrootsAppError::Msg(format!("net build failed: {err}"))),
+            }
+        }
+
+        #[cfg(not(feature = "rt"))]
+        {
+            let handle = NetBuilder::new()
+                .config(self.config)
+                .manage_runtime(self.manage_runtime)
+                .build()
+                .expect("net build must succeed when rt feature is disabled");
+            Ok(handle)
+        }
     }
 }

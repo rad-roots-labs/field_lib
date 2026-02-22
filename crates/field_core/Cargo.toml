@@ -9,6 +9,9 @@ license.workspace = true
 [lib]
 crate-type = ["rlib"]
 
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage_nightly)'] }
+
 [features]
 default = ["rt", "nostr-client"]
 rt = ["radroots-net-core/rt"]
@@ -39,3 +42,6 @@ thiserror = { workspace = true }
 tracing = { workspace = true }
 uniffi = { workspace = true }
 tokio = { workspace = true }
+
+[dev-dependencies]
+tracing-subscriber = { workspace = true }

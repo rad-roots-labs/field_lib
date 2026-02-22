@@ -111,7 +111,7 @@ pub struct TradeListingMessageSummary {
     pub payload_json: String,
 }
 
-#[uniffi::export]
+#[cfg_attr(not(coverage_nightly), uniffi::export)]
 impl RadrootsRuntime {
     pub fn trade_listing_publish(
         &self,

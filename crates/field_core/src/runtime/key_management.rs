@@ -1,6 +1,8 @@
 use super::RadrootsRuntime;
 use crate::RadrootsAppError;
+#[cfg(feature = "nostr-client")]
 use radroots_identity::{RadrootsIdentity, RadrootsIdentityId};
+#[cfg(feature = "nostr-client")]
 use std::path::PathBuf;
 
 #[uniffi::export]

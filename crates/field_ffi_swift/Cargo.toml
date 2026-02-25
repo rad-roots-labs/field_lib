@@ -5,6 +5,7 @@ edition.workspace = true
 authors = ["triesap npub1tr33s4tj2le2kk9yzhfphdtss26gyn8kv7savnnjhj794nqp333q8e7grr"]
 rust-version.workspace = true
 license.workspace = true
+publish = false
 
 [lib]
 crate-type = ["staticlib", "cdylib"]

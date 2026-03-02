@@ -4,10 +4,10 @@ Wasm application runtime bindings for Radroots app surfaces.
 
 ## Goals
 
-- expose app runtime build and info interfaces for wasm targets
-- keep wasm runtime behavior deterministic across supported browser environments
-- provide a stable wasm entry surface backed by radroots_field_core primitives
-- support reusable wasm integration points for higher-level Radroots crates
+- define stable wasm runtime interfaces for app metadata and startup
+- keep wasm runtime behavior deterministic across supported browser targets
+- support feature-gated bindings backed by `radroots_field_core`
+- provide reusable wasm entry points for higher-level Radroots app crates
 
 ## License
 

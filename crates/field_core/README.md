@@ -4,10 +4,10 @@ Core application runtime primitives for Radroots app surfaces.
 
 ## Goals
 
-- define stable app runtime and error interfaces for Radroots clients
-- provide unified logging and network integration points for app surfaces
-- keep app runtime behavior deterministic across supported targets
-- expose reusable app primitives for higher-level Radroots crates
+- define stable application runtime, error, and lifecycle interfaces
+- keep runtime and network wiring deterministic across supported targets
+- support reusable integration points with `radroots-net-core`
+- provide reusable application primitives for higher-level Radroots crates
 
 ## License
 

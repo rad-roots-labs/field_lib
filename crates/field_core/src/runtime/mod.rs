@@ -34,7 +34,9 @@ pub struct RadrootsRuntime {
     pub(crate) post_events_rx: Mutex<
         Option<
             Receiver<
-                radroots_events_codec::parsed::RadrootsParsedData<radroots_events::post::RadrootsPost>,
+                radroots_events_codec::parsed::RadrootsParsedData<
+                    radroots_events::post::RadrootsPost,
+                >,
             >,
         >,
     >,

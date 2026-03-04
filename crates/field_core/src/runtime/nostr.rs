@@ -64,14 +64,14 @@ pub struct NostrPostEventMetadata {
 
 #[cfg(feature = "nostr-client")]
 fn map_post_event_metadata(
-    event: radroots_events::post::RadrootsPostEventMetadata,
+    event: radroots_events_codec::parsed::RadrootsParsedData<radroots_events::post::RadrootsPost>,
 ) -> NostrPostEventMetadata {
     NostrPostEventMetadata {
         id: event.id,
         author: event.author,
         published_at: event.published_at as u64,
         post: NostrPost {
-            content: event.post.content,
+            content: event.data.content,
         },
     }
 }
@@ -164,16 +164,16 @@ impl RadrootsRuntime {
                 author: m.author,
                 published_at: m.published_at as u64,
                 profile: NostrProfile {
-                    name: m.profile.name.into(),
-                    display_name: m.profile.display_name.into(),
-                    nip05: m.profile.nip05.into(),
-                    about: m.profile.about.into(),
-                    website: m.profile.website,
-                    picture: m.profile.picture,
-                    banner: m.profile.banner,
-                    lud06: m.profile.lud06,
-                    lud16: m.profile.lud16,
-                    bot: m.profile.bot,
+                    name: m.data.profile.name.into(),
+                    display_name: m.data.profile.display_name.into(),
+                    nip05: m.data.profile.nip05.into(),
+                    about: m.data.profile.about.into(),
+                    website: m.data.profile.website,
+                    picture: m.data.profile.picture,
+                    banner: m.data.profile.banner,
+                    lud06: m.data.profile.lud06,
+                    lud16: m.data.profile.lud16,
+                    bot: m.data.profile.bot,
                 },
             });
         }

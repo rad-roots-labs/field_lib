@@ -31,8 +31,13 @@ pub struct RadrootsRuntime {
     pub(crate) shutting_down: AtomicBool,
     pub(crate) platform_app: RwLock<Option<AppInfoPlatform>>,
     #[cfg(feature = "nostr-client")]
-    pub(crate) post_events_rx:
-        Mutex<Option<Receiver<radroots_events::post::RadrootsPostEventMetadata>>>,
+    pub(crate) post_events_rx: Mutex<
+        Option<
+            Receiver<
+                radroots_events_codec::parsed::RadrootsParsedData<radroots_events::post::RadrootsPost>,
+            >,
+        >,
+    >,
 }
 
 #[cfg_attr(not(coverage_nightly), uniffi::export)]

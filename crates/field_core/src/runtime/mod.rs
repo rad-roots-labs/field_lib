@@ -70,7 +70,9 @@ impl RadrootsRuntime {
 
     pub fn stop(&self) {
         if self.shutting_down.swap(true, Ordering::SeqCst) {
-            let _ = crate::logging::log_info("Runtime stop already in progress or completed.".to_string());
+            let _ = crate::logging::log_info(
+                "Runtime stop already in progress or completed.".to_string(),
+            );
             return;
         }
 
@@ -83,13 +85,17 @@ impl RadrootsRuntime {
                     let _ = crate::logging::log_info("No runtime was active at stop.".to_string());
                 }
             } else {
-                let _ = crate::logging::log_info("Failed to acquire runtime lock during stop.".to_string());
+                let _ = crate::logging::log_info(
+                    "Failed to acquire runtime lock during stop.".to_string(),
+                );
             }
         }
 
         #[cfg(not(feature = "rt"))]
         {
-            let _ = crate::logging::log_info("No managed runtime is available for this build.".to_string());
+            let _ = crate::logging::log_info(
+                "No managed runtime is available for this build.".to_string(),
+            );
         }
     }
 

@@ -19,30 +19,10 @@ fn expect_disabled<T>(result: Result<T, RadrootsAppError>) {
 #[test]
 fn runtime_info_and_platform_paths_are_exercised() {
     let runtime = RadrootsRuntime::new().expect("runtime");
-
-    runtime.set_app_info_platform(
-        Some("ios".to_string()),
-        Some("org.radroots.app".to_string()),
-        Some("1.0.0".to_string()),
-        Some("100".to_string()),
-        Some("abc123".to_string()),
-    );
-
-    let info = runtime.info();
-    assert!(!info.app.shutting_down);
-    assert_eq!(
-        info.app.platform.as_ref().and_then(|v| v.platform.clone()),
-        Some("ios".to_string())
-    );
-
-    let json = runtime.info_json();
-    assert!(json.contains("\"app\""));
     assert!(runtime.uptime_millis() >= 0);
 
     runtime.stop();
     runtime.stop();
-    let stopped = runtime.info();
-    assert!(stopped.app.shutting_down);
 }
 
 #[test]

@@ -68,9 +68,52 @@ pub fn app_build_info() -> NetBuildInfo {
     NetBuildInfo {
         crate_name: env!("CARGO_PKG_NAME").to_string(),
         crate_version: env!("CARGO_PKG_VERSION").to_string(),
-        rustc: option_env!("RUSTC_VERSION").map(|s| s.to_string()),
-        profile: option_env!("PROFILE").map(|s| s.to_string()),
-        git_sha: option_env!("GIT_HASH").map(|s| s.to_string()),
-        build_time_unix: option_env!("BUILD_TIME_UNIX").and_then(|s| s.parse().ok()),
+        rustc: env_opt_to_owned(option_env!("RUSTC_VERSION")),
+        profile: env_opt_to_owned(option_env!("PROFILE")),
+        git_sha: env_opt_to_owned(option_env!("GIT_HASH")),
+        build_time_unix: env_opt_to_u64(option_env!("BUILD_TIME_UNIX")),
+    }
+}
+
+fn env_opt_to_owned(value: Option<&str>) -> Option<String> {
+    value.map(str::to_owned)
+}
+
+fn env_opt_to_u64(value: Option<&str>) -> Option<u64> {
+    value.map(str::parse::<u64>).and_then(Result::ok)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::NetBuildInfo;
+    use radroots_net_core::net;
+
+    #[test]
+    fn net_build_info_from_copies_optional_fields() {
+        let source = net::BuildInfo {
+            crate_name: "radroots-net-core",
+            crate_version: "1.2.3",
+            rustc: Some("rustc 1.92.0"),
+            profile: Some("debug"),
+            git_sha: Some("abc123"),
+            build_time_unix: Some(1_700_000_000),
+        };
+
+        let out = NetBuildInfo::from(&source);
+        assert_eq!(out.crate_name, "radroots-net-core");
+        assert_eq!(out.crate_version, "1.2.3");
+        assert_eq!(out.rustc.as_deref(), Some("rustc 1.92.0"));
+        assert_eq!(out.profile.as_deref(), Some("debug"));
+        assert_eq!(out.git_sha.as_deref(), Some("abc123"));
+        assert_eq!(out.build_time_unix, Some(1_700_000_000));
+    }
+
+    #[test]
+    fn env_opt_helpers_cover_some_none_and_parse_failure() {
+        assert_eq!(super::env_opt_to_owned(Some("abc")).as_deref(), Some("abc"));
+        assert_eq!(super::env_opt_to_owned(None), None);
+        assert_eq!(super::env_opt_to_u64(Some("123")), Some(123));
+        assert_eq!(super::env_opt_to_u64(Some("abc")), None);
+        assert_eq!(super::env_opt_to_u64(None), None);
     }
 }

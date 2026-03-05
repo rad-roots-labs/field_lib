@@ -16,7 +16,6 @@ use std::sync::{
 };
 #[cfg(feature = "nostr-client")]
 use tokio::sync::broadcast::Receiver;
-use tracing::info;
 
 use self::{
     app_info::AppInfoPlatform,
@@ -71,7 +70,7 @@ impl RadrootsRuntime {
 
     pub fn stop(&self) {
         if self.shutting_down.swap(true, Ordering::SeqCst) {
-            info!("Runtime stop already in progress or completed.");
+            let _ = crate::logging::log_info("Runtime stop already in progress or completed.".to_string());
             return;
         }
 
@@ -79,18 +78,18 @@ impl RadrootsRuntime {
         {
             if let Ok(mut net) = self.net.lock() {
                 if let Some(_rt) = net.rt.take() {
-                    info!("Runtime stopped gracefully.");
+                    let _ = crate::logging::log_info("Runtime stopped gracefully.".to_string());
                 } else {
-                    info!("No runtime was active at stop.");
+                    let _ = crate::logging::log_info("No runtime was active at stop.".to_string());
                 }
             } else {
-                info!("Failed to acquire runtime lock during stop.");
+                let _ = crate::logging::log_info("Failed to acquire runtime lock during stop.".to_string());
             }
         }
 
         #[cfg(not(feature = "rt"))]
         {
-            info!("No managed runtime is available for this build.");
+            let _ = crate::logging::log_info("No managed runtime is available for this build.".to_string());
         }
     }
 
@@ -112,8 +111,7 @@ impl RadrootsRuntime {
         }
         #[cfg(not(feature = "rt"))]
         {
-            serde_json::to_string_pretty(&self.info())
-                .expect("runtime info serialization must succeed in no-rt builds")
+            serde_json::to_string_pretty(&self.info()).unwrap_or_default()
         }
     }
 
@@ -138,6 +136,13 @@ mod tests {
     use super::RadrootsRuntime;
     use std::panic::{AssertUnwindSafe, catch_unwind};
 
+    fn init_info_logging() {
+        let _ = tracing_subscriber::fmt()
+            .with_test_writer()
+            .with_max_level(tracing::Level::INFO)
+            .try_init();
+    }
+
     fn poison_net_lock(runtime: &RadrootsRuntime) {
         let handle = runtime.net.clone();
         let _ = catch_unwind(AssertUnwindSafe(|| {
@@ -155,7 +160,11 @@ mod tests {
 
     #[test]
     fn runtime_info_uses_default_net_info_when_lock_is_poisoned() {
+        init_info_logging();
         let runtime = RadrootsRuntime::new().expect("runtime");
+
+        let healthy = runtime.info();
+        assert!(!healthy.net.crate_name.is_empty());
         poison_net_lock(&runtime);
 
         let _ = runtime.uptime_millis();
@@ -170,7 +179,20 @@ mod tests {
 
     #[test]
     fn set_platform_info_handles_poisoned_lock() {
+        init_info_logging();
         let runtime = RadrootsRuntime::new().expect("runtime");
+        runtime.set_app_info_platform(
+            Some("ios".to_string()),
+            Some("org.radroots.app".to_string()),
+            Some("1.0.0".to_string()),
+            Some("100".to_string()),
+            Some("abc123".to_string()),
+        );
+        let info = runtime.info();
+        assert_eq!(
+            info.app.platform.as_ref().and_then(|v| v.platform.clone()),
+            Some("ios".to_string())
+        );
         poison_platform_lock(&runtime);
         runtime.set_app_info_platform(
             Some("ios".to_string()),

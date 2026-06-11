@@ -13,7 +13,7 @@ impl RadrootsRuntime {
             if let Ok(guard) = self.net.lock() {
                 return guard
                     .accounts
-                    .selected_signing_identity()
+                    .default_signing_identity()
                     .ok()
                     .flatten()
                     .is_some();
@@ -35,7 +35,7 @@ impl RadrootsRuntime {
             if let Ok(guard) = self.net.lock() {
                 return guard
                     .accounts
-                    .selected_public_identity()
+                    .default_public_identity()
                     .ok()
                     .flatten()
                     .map(|identity| identity.public_key_npub);
@@ -161,7 +161,7 @@ impl RadrootsRuntime {
             };
             let Some(selected_id) = guard
                 .accounts
-                .selected_account_id()
+                .default_account_id()
                 .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?
             else {
                 return Ok(None);
@@ -188,7 +188,7 @@ impl RadrootsRuntime {
                 .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
             guard
                 .accounts
-                .select_account(&account_id)
+                .set_default_account(&account_id)
                 .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
             guard.nostr = None;
             Ok(())

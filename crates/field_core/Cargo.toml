@@ -19,27 +19,27 @@ unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage_nightly)'] }
 
 [features]
 default = ["rt", "nostr-client"]
-rt = ["radroots-net-core/rt"]
+rt = ["radroots_net_core/rt"]
 nostr-client = [
-    "radroots-net-core/nostr-client",
-    "dep:radroots-core",
-    "dep:radroots-events-codec",
-    "dep:radroots-trade",
-    "dep:radroots-identity",
-    "dep:radroots-nostr",
+    "radroots_net_core/nostr-client",
+    "dep:radroots_core",
+    "dep:radroots_events_codec",
+    "dep:radroots_trade",
+    "dep:radroots_identity",
+    "dep:radroots_nostr",
 ]
-directories = ["radroots-net-core/directories"]
-fs-persistence = ["radroots-net-core/fs-persistence"]
+directories = ["radroots_net_core/directories"]
+fs-persistence = ["radroots_net_core/fs-persistence"]
 
 [dependencies]
-radroots-log = { workspace = true }
-radroots-events = { workspace = true }
-radroots-net-core = { workspace = true, features = ["std"] }
-radroots-core = { workspace = true, optional = true }
-radroots-identity = { workspace = true, optional = true, default-features = false, features = ["std"] }
-radroots-events-codec = { workspace = true, features = ["serde_json"], optional = true }
-radroots-trade = { workspace = true, features = ["std", "serde", "serde_json"], optional = true }
-radroots-nostr = { workspace = true, features = ["events"], optional = true }
+radroots_log = { workspace = true }
+radroots_events = { workspace = true }
+radroots_net_core = { workspace = true, features = ["std"] }
+radroots_core = { workspace = true, optional = true }
+radroots_identity = { workspace = true, optional = true, default-features = false, features = ["std"] }
+radroots_events_codec = { workspace = true, features = ["serde_json"], optional = true }
+radroots_trade = { workspace = true, features = ["std", "serde", "serde_json"], optional = true }
+radroots_nostr = { workspace = true, features = ["events"], optional = true }
 chrono = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }

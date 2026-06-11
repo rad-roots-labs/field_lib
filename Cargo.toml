@@ -19,14 +19,14 @@ readme = "README.md"
 radroots_field_core = { path = "crates/field_core", version = "0.1.0-alpha.1", default-features = false }
 radroots_field_ffi_swift = { path = "crates/field_ffi_swift", version = "0.1.0-alpha.1" }
 radroots_field_wasm = { path = "crates/field_wasm", version = "0.1.0-alpha.1" }
-radroots-core = { package = "radroots_core", path = "../radroots/crates/core", version = "0.1.0-alpha.2", default-features = false }
-radroots-events = { package = "radroots_events", path = "../radroots/crates/events", version = "0.1.0-alpha.2", default-features = false }
-radroots-events-codec = { package = "radroots_events_codec", path = "../radroots/crates/events_codec", version = "0.1.0-alpha.2", default-features = false }
-radroots-identity = { package = "radroots_identity", path = "../radroots/crates/identity", version = "0.1.0-alpha.2", default-features = false }
-radroots-log = { package = "radroots_log", path = "../radroots/crates/log", version = "0.1.0-alpha.2", default-features = false }
-radroots-net-core = { package = "radroots_net", path = "../radroots/crates/net", version = "0.1.0-alpha.2", default-features = false }
-radroots-nostr = { package = "radroots_nostr", path = "../radroots/crates/nostr", version = "0.1.0-alpha.2", default-features = false }
-radroots-trade = { package = "radroots_trade", path = "../radroots/crates/trade", version = "0.1.0-alpha.2", default-features = false }
+radroots_core = { path = "../radroots/crates/core", version = "0.1.0-alpha.2", default-features = false }
+radroots_events = { path = "../radroots/crates/events", version = "0.1.0-alpha.2", default-features = false }
+radroots_events_codec = { path = "../radroots/crates/events_codec", version = "0.1.0-alpha.2", default-features = false }
+radroots_identity = { path = "../radroots/crates/identity", version = "0.1.0-alpha.2", default-features = false }
+radroots_log = { path = "../radroots/crates/log", version = "0.1.0-alpha.2", default-features = false }
+radroots_net_core = { package = "radroots_net", path = "../radroots/crates/net", version = "0.1.0-alpha.2", default-features = false }
+radroots_nostr = { path = "../radroots/crates/nostr", version = "0.1.0-alpha.2", default-features = false }
+radroots_trade = { path = "../radroots/crates/trade", version = "0.1.0-alpha.2", default-features = false }
 
 chrono = { version = "0.4" }
 serde = { version = "1", features = ["derive"] }

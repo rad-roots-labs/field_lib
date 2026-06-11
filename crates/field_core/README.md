@@ -1,13 +1,13 @@
 # radroots_field_core
 
-Core application runtime primitives for Radroots app surfaces.
+Core field runtime primitives for Radroots field surfaces.
 
 ## Goals
 
-- define stable application runtime, error, and lifecycle interfaces
+- define stable field runtime, error, and lifecycle interfaces
 - keep runtime and network wiring deterministic across supported targets
 - support reusable integration points with `radroots-net-core`
-- provide reusable application primitives for higher-level Radroots crates
+- provide reusable field primitives for higher-level Radroots crates
 
 ## License
 

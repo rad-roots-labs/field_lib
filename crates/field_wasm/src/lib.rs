@@ -3,7 +3,7 @@
 use wasm_bindgen::prelude::wasm_bindgen;
 
 #[wasm_bindgen]
-pub fn app_wasm_build_info_json() -> String {
+pub fn field_wasm_build_info_json() -> String {
     let runtime = radroots_field_core::RadrootsRuntime::new()
         .expect("runtime init must succeed with radroots_field_core no-default-features");
     runtime.info_json()
@@ -15,11 +15,11 @@ pub fn coverage_branch_probe(input: bool) -> &'static str {
 
 #[cfg(test)]
 mod tests {
-    use super::{app_wasm_build_info_json, coverage_branch_probe};
+    use super::{coverage_branch_probe, field_wasm_build_info_json};
 
     #[test]
-    fn app_wasm_build_info_json_contains_runtime_keys() {
-        let json = app_wasm_build_info_json();
+    fn field_wasm_build_info_json_contains_runtime_keys() {
+        let json = field_wasm_build_info_json();
         assert!(json.contains("\"app\""));
     }
 

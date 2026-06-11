@@ -9,6 +9,7 @@ pub fn init_logging(
     let opts = radroots_log::LoggingOptions {
         dir: dir.map(PathBuf::from),
         file_name: file_name.unwrap_or_else(|| "radroots.log".to_string()),
+        file_layout: radroots_log::LogFileLayout::PrefixedDate,
         stdout: is_stdout.unwrap_or(true),
         default_level: None,
     };

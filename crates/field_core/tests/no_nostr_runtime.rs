@@ -29,23 +29,25 @@ fn runtime_info_and_platform_paths_are_exercised() {
 fn key_management_disabled_paths_are_exercised() {
     let runtime = RadrootsRuntime::new().expect("runtime");
 
-    assert!(!runtime.accounts_has_selected_signing_identity());
-    assert_eq!(runtime.accounts_selected_npub(), None);
-    expect_disabled(runtime.accounts_list_ids());
-    expect_disabled(runtime.accounts_generate(Some("alpha".to_string()), true));
-    expect_disabled(runtime.accounts_import_secret(
+    assert!(!runtime.nostr_identity_has_selected_signing_identity());
+    assert_eq!(runtime.nostr_identity_selected_npub(), None);
+    expect_disabled(runtime.nostr_identity_list());
+    expect_disabled(runtime.nostr_identity_list_ids());
+    expect_disabled(runtime.nostr_identity_snapshot());
+    expect_disabled(runtime.nostr_identity_generate(Some("alpha".to_string()), true));
+    expect_disabled(runtime.nostr_identity_import_secret(
         "deadbeef".to_string(),
         Some("alpha".to_string()),
         true,
     ));
-    expect_disabled(runtime.accounts_import_from_path(
+    expect_disabled(runtime.nostr_identity_import_from_path(
         "/tmp/nostr.json".to_string(),
         Some("alpha".to_string()),
         true,
     ));
-    expect_disabled(runtime.accounts_export_selected_secret_hex());
-    expect_disabled(runtime.accounts_select("account-1".to_string()));
-    expect_disabled(runtime.accounts_remove("account-1".to_string()));
+    expect_disabled(runtime.nostr_identity_export_selected_secret_hex());
+    expect_disabled(runtime.nostr_identity_select("account-1".to_string()));
+    expect_disabled(runtime.nostr_identity_remove("account-1".to_string()));
 }
 
 #[test]

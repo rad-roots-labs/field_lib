@@ -1,5 +1,4 @@
 pub mod app_info;
-pub mod auth_session;
 pub mod builder;
 pub mod info;
 pub mod key_management;
@@ -20,7 +19,6 @@ use tokio::sync::broadcast::Receiver;
 
 use self::{
     app_info::AppInfoPlatform,
-    auth_session::{FieldAuthConfig, FieldSessionState},
     info::{RuntimeInfo, gather_runtime_info},
 };
 use crate::RadrootsAppError;
@@ -31,8 +29,6 @@ pub struct RadrootsRuntime {
     pub(crate) started_unix_ms: i64,
     pub(crate) shutting_down: AtomicBool,
     pub(crate) platform_app: RwLock<Option<AppInfoPlatform>>,
-    pub(crate) auth_config: RwLock<FieldAuthConfig>,
-    pub(crate) session: RwLock<FieldSessionState>,
     #[cfg(feature = "nostr-client")]
     pub(crate) post_events_rx: Mutex<
         Option<
@@ -67,8 +63,6 @@ impl RadrootsRuntime {
             started_unix_ms: Utc::now().timestamp_millis(),
             shutting_down: AtomicBool::new(false),
             platform_app: RwLock::new(None),
-            auth_config: RwLock::new(FieldAuthConfig::default()),
-            session: RwLock::new(FieldSessionState::default()),
             #[cfg(feature = "nostr-client")]
             post_events_rx: Mutex::new(None),
         })

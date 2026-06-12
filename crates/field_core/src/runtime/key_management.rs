@@ -319,4 +319,34 @@ impl RadrootsRuntime {
             Err(RadrootsAppError::Msg("nostr disabled".into()))
         }
     }
+
+    pub fn nostr_identity_reset_all(&self) -> Result<(), RadrootsAppError> {
+        #[cfg(feature = "nostr-client")]
+        {
+            let mut guard = match self.net.lock() {
+                Ok(guard) => guard,
+                Err(err) => return Err(RadrootsAppError::Msg(format!("{err}"))),
+            };
+            let accounts = guard
+                .accounts
+                .list_accounts()
+                .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
+            for account in accounts {
+                guard
+                    .accounts
+                    .remove_account(&account.account_id)
+                    .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
+            }
+            guard
+                .accounts
+                .clear_default_account()
+                .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
+            guard.nostr = None;
+            Ok(())
+        }
+        #[cfg(not(feature = "nostr-client"))]
+        {
+            Err(RadrootsAppError::Msg("nostr disabled".into()))
+        }
+    }
 }

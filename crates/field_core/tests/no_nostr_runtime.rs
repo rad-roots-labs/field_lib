@@ -48,6 +48,7 @@ fn key_management_disabled_paths_are_exercised() {
     expect_disabled(runtime.nostr_identity_export_selected_secret_hex());
     expect_disabled(runtime.nostr_identity_select("account-1".to_string()));
     expect_disabled(runtime.nostr_identity_remove("account-1".to_string()));
+    expect_disabled(runtime.nostr_identity_reset_all());
 }
 
 #[test]

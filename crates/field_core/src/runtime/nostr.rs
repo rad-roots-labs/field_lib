@@ -3,7 +3,7 @@ use crate::RadrootsAppError;
 #[cfg(feature = "nostr-client")]
 use tokio::sync::broadcast::error::TryRecvError;
 
-#[derive(uniffi::Enum, Debug, Clone, Copy)]
+#[derive(uniffi::Enum, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NostrLight {
     Red,
     Yellow,

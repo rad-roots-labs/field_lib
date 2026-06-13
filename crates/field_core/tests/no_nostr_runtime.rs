@@ -34,26 +34,16 @@ fn key_management_disabled_paths_are_exercised() {
     expect_disabled(runtime.nostr_identity_list());
     expect_disabled(runtime.nostr_identity_list_ids());
     expect_disabled(runtime.nostr_identity_snapshot());
-    expect_disabled(runtime.nostr_identity_generate(Some("alpha".to_string()), true));
-    expect_disabled(runtime.nostr_identity_import_secret(
+    expect_disabled(runtime.nostr_identity_validate_host_custody_secret("deadbeef".to_string()));
+    expect_disabled(runtime.nostr_identity_restore_host_custody_secret(
         "deadbeef".to_string(),
-        Some("alpha".to_string()),
-        true,
-    ));
-    expect_disabled(runtime.nostr_identity_restore_host_secret(
-        "deadbeef".to_string(),
-        Some("alpha".to_string()),
-        true,
-    ));
-    expect_disabled(runtime.nostr_identity_import_from_path(
-        "/tmp/nostr.json".to_string(),
         Some("alpha".to_string()),
         true,
     ));
     expect_disabled(runtime.nostr_identity_select("account-1".to_string()));
     expect_disabled(runtime.nostr_identity_remove("account-1".to_string()));
-    expect_disabled(runtime.nostr_identity_clear_runtime_state());
-    expect_disabled(runtime.nostr_identity_reset_all());
+    expect_disabled(runtime.nostr_identity_lock_host_custody_runtime());
+    expect_disabled(runtime.nostr_identity_reset_host_custody_runtime());
 }
 
 #[test]

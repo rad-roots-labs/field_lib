@@ -2,8 +2,6 @@ use super::RadrootsRuntime;
 use crate::RadrootsAppError;
 #[cfg(feature = "nostr-client")]
 use radroots_identity::{RadrootsIdentity, RadrootsIdentityId};
-#[cfg(feature = "nostr-client")]
-use std::path::PathBuf;
 
 #[derive(uniffi::Record, Debug, Clone)]
 pub struct NostrIdentityRecord {
@@ -20,6 +18,13 @@ pub struct NostrIdentitySnapshot {
     pub selected_identity_id: Option<String>,
     pub selected_npub: Option<String>,
     pub identities: Vec<NostrIdentityRecord>,
+}
+
+#[derive(uniffi::Record, Debug, Clone)]
+pub struct NostrHostCustodyIdentity {
+    pub id: String,
+    pub public_key_hex: String,
+    pub public_key_npub: String,
 }
 
 #[cfg(feature = "nostr-client")]
@@ -62,6 +67,34 @@ fn invalidate_nostr_runtime(net: &mut radroots_net_core::Net) {
 fn identity_from_secret(secret_key: &str) -> Result<RadrootsIdentity, RadrootsAppError> {
     RadrootsIdentity::from_secret_key_str(secret_key)
         .map_err(|e| RadrootsAppError::Msg(format!("{e}")))
+}
+
+#[cfg(feature = "nostr-client")]
+fn host_custody_identity_from_secret(
+    secret_key: &str,
+) -> Result<(RadrootsIdentity, NostrHostCustodyIdentity), RadrootsAppError> {
+    let identity = identity_from_secret(secret_key)?;
+    let record = NostrHostCustodyIdentity {
+        id: identity.id().to_string(),
+        public_key_hex: identity.public_key_hex(),
+        public_key_npub: identity.public_key_npub(),
+    };
+    Ok((identity, record))
+}
+
+#[cfg(feature = "nostr-client")]
+fn restore_host_custody_identity(
+    net: &mut radroots_net_core::Net,
+    identity: &RadrootsIdentity,
+    label: Option<String>,
+    make_selected: bool,
+) -> Result<NostrIdentityRecord, RadrootsAppError> {
+    let account_id = net
+        .accounts
+        .upsert_identity(identity, label, make_selected)
+        .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
+    invalidate_nostr_runtime(net);
+    account_record(net, &account_id)
 }
 
 #[cfg_attr(not(coverage_nightly), uniffi::export)]
@@ -210,32 +243,23 @@ impl RadrootsRuntime {
         }
     }
 
-    pub fn nostr_identity_generate(
+    pub fn nostr_identity_validate_host_custody_secret(
         &self,
-        label: Option<String>,
-        make_selected: bool,
-    ) -> Result<NostrIdentityRecord, RadrootsAppError> {
+        secret_key: String,
+    ) -> Result<NostrHostCustodyIdentity, RadrootsAppError> {
         #[cfg(feature = "nostr-client")]
         {
-            let mut guard = match self.net.lock() {
-                Ok(guard) => guard,
-                Err(err) => return Err(RadrootsAppError::Msg(format!("{err}"))),
-            };
-            let account_id = guard
-                .accounts
-                .generate_identity(label, make_selected)
-                .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
-            invalidate_nostr_runtime(&mut guard);
-            return account_record(&guard, &account_id);
+            return host_custody_identity_from_secret(secret_key.as_str())
+                .map(|(_, identity)| identity);
         }
         #[cfg(not(feature = "nostr-client"))]
         {
-            let _ = (label, make_selected);
+            let _ = secret_key;
             Err(RadrootsAppError::Msg("nostr disabled".into()))
         }
     }
 
-    pub fn nostr_identity_import_secret(
+    pub fn nostr_identity_restore_host_custody_secret(
         &self,
         secret_key: String,
         label: Option<String>,
@@ -247,52 +271,12 @@ impl RadrootsRuntime {
                 Ok(guard) => guard,
                 Err(err) => return Err(RadrootsAppError::Msg(format!("{err}"))),
             };
-            let identity = identity_from_secret(secret_key.as_str())?;
-            let account_id = guard
-                .accounts
-                .upsert_identity(&identity, label, make_selected)
-                .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
-            invalidate_nostr_runtime(&mut guard);
-            return account_record(&guard, &account_id);
+            let (identity, _) = host_custody_identity_from_secret(secret_key.as_str())?;
+            return restore_host_custody_identity(&mut guard, &identity, label, make_selected);
         }
         #[cfg(not(feature = "nostr-client"))]
         {
             let _ = (secret_key, label, make_selected);
-            Err(RadrootsAppError::Msg("nostr disabled".into()))
-        }
-    }
-
-    pub fn nostr_identity_restore_host_secret(
-        &self,
-        secret_key: String,
-        label: Option<String>,
-        make_selected: bool,
-    ) -> Result<NostrIdentityRecord, RadrootsAppError> {
-        self.nostr_identity_import_secret(secret_key, label, make_selected)
-    }
-
-    pub fn nostr_identity_import_from_path(
-        &self,
-        path: String,
-        label: Option<String>,
-        make_selected: bool,
-    ) -> Result<NostrIdentityRecord, RadrootsAppError> {
-        #[cfg(feature = "nostr-client")]
-        {
-            let mut guard = match self.net.lock() {
-                Ok(guard) => guard,
-                Err(err) => return Err(RadrootsAppError::Msg(format!("{err}"))),
-            };
-            let account_id = guard
-                .accounts
-                .migrate_legacy_identity_file(PathBuf::from(path), label, make_selected)
-                .map_err(|e| RadrootsAppError::Msg(format!("{e}")))?;
-            invalidate_nostr_runtime(&mut guard);
-            return account_record(&guard, &account_id);
-        }
-        #[cfg(not(feature = "nostr-client"))]
-        {
-            let _ = (path, label, make_selected);
             Err(RadrootsAppError::Msg("nostr disabled".into()))
         }
     }
@@ -343,7 +327,7 @@ impl RadrootsRuntime {
         }
     }
 
-    pub fn nostr_identity_clear_runtime_state(&self) -> Result<(), RadrootsAppError> {
+    pub fn nostr_identity_lock_host_custody_runtime(&self) -> Result<(), RadrootsAppError> {
         #[cfg(feature = "nostr-client")]
         {
             let mut guard = match self.net.lock() {
@@ -376,7 +360,7 @@ impl RadrootsRuntime {
         }
     }
 
-    pub fn nostr_identity_reset_all(&self) -> Result<(), RadrootsAppError> {
-        self.nostr_identity_clear_runtime_state()
+    pub fn nostr_identity_reset_host_custody_runtime(&self) -> Result<(), RadrootsAppError> {
+        self.nostr_identity_lock_host_custody_runtime()
     }
 }

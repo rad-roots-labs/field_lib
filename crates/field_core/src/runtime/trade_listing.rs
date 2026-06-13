@@ -9,6 +9,7 @@ use radroots_core::{
 use radroots_events::{
     RadrootsNostrEvent,
     farm::RadrootsFarmRef,
+    ids::{RadrootsDTag, RadrootsInventoryBinId},
     kinds::KIND_LISTING,
     listing::{
         RadrootsListing, RadrootsListingAvailability, RadrootsListingBin,
@@ -258,6 +259,10 @@ fn listing_from_draft(draft: &TradeListingDraft) -> Result<RadrootsListing, Radr
         draft.bin_id.clone().unwrap_or_else(|| "bin-1".to_string()),
         "bin_id",
     )?;
+    let listing_id = RadrootsDTag::parse(listing_id)
+        .map_err(|error| RadrootsAppError::Msg(format!("invalid listing_id: {error}")))?;
+    let bin_id = RadrootsInventoryBinId::parse(bin_id)
+        .map_err(|error| RadrootsAppError::Msg(format!("invalid bin_id: {error}")))?;
     let amount = parse_decimal(&draft.bin_display_amount, "bin_display_amount")?;
     let unit = parse_unit(&draft.bin_display_unit)?;
     let canonical_unit = unit.canonical_unit();
@@ -268,6 +273,7 @@ fn listing_from_draft(draft: &TradeListingDraft) -> Result<RadrootsListing, Radr
 
     Ok(RadrootsListing {
         d_tag: listing_id,
+        published_at: None,
         farm: RadrootsFarmRef {
             pubkey: farm_pubkey,
             d_tag: farm_d_tag,
